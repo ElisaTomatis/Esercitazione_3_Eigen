@@ -1,8 +1,6 @@
 #include <iostream>
 #include <Eigen/Dense>
 
-#include "LinearSolver.hpp"
-
 using namespace std;
 using namespace Eigen;
 
@@ -24,15 +22,10 @@ double relativeError(const VectorXd& x, const VectorXd& x_exact) {
 }
 
 
-double conditionNumber(const MatrixXd& A) {
-    JacobiSVD<MatrixXd> svd(A);
-    return svd.singularValues().maxCoeff() / svd.singularValues().minCoeff();
-}
-
 int main() {
     vector<MatrixXd> A_matrices = {
         (MatrixXd(2,2) << 0.5547001962252291, -0.03770900990025203, 0.8320502943378437, -0.9992887623566787).finished(),
-        (MatrixXd(2,2) << 0.5547001962252291, -0.5540607316466765, 0.320502943378437, -0.83247624929913135).finished(),
+        (MatrixXd(2,2) << 0.5547001962252291, -0.5540607316466765, 0.8320502943378437, -0.8324762492991313).finished(),
         (MatrixXd(2,2) << 0.5547001962252291, -0.5547001955851905, 0.8320502943378437, -0.832050294764536).finished()
     };
     
@@ -47,26 +40,16 @@ int main() {
     
     for (size_t i = 0; i < A_matrices.size(); ++i) {
         cout << "Solving system " << i+1 << " using PALU and QR decomposition" << endl;
-        
-        double condA = conditionNumber(A_matrices[i]);
-        
-        if (condA > 1e6) {
-			cout << "Condition number: " << condA << endl;
-            cout << "Warning: Matrix is ill-conditioned, results may be inaccurate." << endl;
-			return 1;
-		}
+   
+		VectorXd x_palu = solvePALU(A_matrices[i], b_vectors[i]);
+		VectorXd x_qr = solveQR(A_matrices[i], b_vectors[i]);
 		
-		else {
-			VectorXd x_palu = solvePALU(A_matrices[i], b_vectors[i]);
-			VectorXd x_qr = solveQR(A_matrices[i], b_vectors[i]);
-			
-			cout << "PALU Solution: \n" << x_palu.transpose() << endl;
-			cout << "QR Solution: \n" << x_qr.transpose() << endl;
-			
-			cout << "PALU Relative Error: " << relativeError(x_palu, x_exact) << endl;
-			cout << "QR Relative Error: " << relativeError(x_qr, x_exact) << endl;
-     
-        }
+		cout << "PALU Solution: \n" << x_palu.transpose() << endl;
+		cout << "QR Solution: \n" << x_qr.transpose() << endl;
+		
+		cout << "PALU Relative Error: " << relativeError(x_palu, x_exact) << endl;
+		cout << "QR Relative Error: " << relativeError(x_qr, x_exact) << endl;
+
 		cout << "\n" << endl;
     }
     
